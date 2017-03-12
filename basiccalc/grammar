@@ -1,0 +1,91 @@
+EVOLUTION OF THE GRAMMAR:
+
+Initial grammar:
+
+expr  := expr op expr | (expr) | num
+op    := + | - | * | /
+num   := integer
+
+Removing left recursion and applying a simple trick from observation:
+
+expr   := expr' expr''
+expr'  := (expr) | num
+expr'' := op expr | epsilon
+op     := + | - | * | /
+num    := integer
+
+Computing the FIRST sets of each non-terminal symbol:
+
+FIRST(expr)   = FIRST(expr') = { (, integer }
+FIRST(expr')  = { (, integer }
+FIRST(expr'') = FIRST(op) = { +, -, *, / }
+FIRST(op)     = { +, -, *, / }
+FIRST(num)    = { integer }
+
+Computing the FOLLOW sets of each non-terminal symbol:
+
+FOLLOW(expr)   = { ) } UNION FOLLOW(expr'') = { ) }
+FOLLOW(expr')  = FIRST(expr'') UNION FOLLOW(expr'')
+               = { +, -, *, / , ) }
+FOLLOW(expr'') = FOLLOW(expr) = { ) }
+FOLLOW(op)     = FIRST(expr) = { (, integer }
+FOLLOW(num)    = FOLLOW(expr') = { +, -, *, / , ) }
+
+Is the grammar LL(1)?
+
+Yes. However, it doesn't encode operator precedence correctly, and its
+right associative...
+
+Refactor to account for operator precedence:
+
+expr   := expr op1 term | term
+term   := term op2 term' | term'
+term'  := num | (expr)
+op1    := + | -
+op2    := * | /
+num    := integer
+
+Attempting to remove left recursion,
+
+expr   := term expr'
+expr'  := op1 term expr' | epsilon
+term   := term' term''
+term'  := num | (expr)
+term'' := op2 term' term'' | epsilon
+op1    := + | -
+op2    := * | /
+num    := integer
+
+Computing the FIRST AND FOLLOW sets,
+
+FIRST(expr)   = FIRST(term)
+              = { (, integer }
+FIRST(expr')  = FIRST(op1)
+              = { +, - }
+FIRST(term)   = FIRST(term')
+              = { (, integer }
+FIRST(term')  = FIRST(num) UNION { ( }
+              = { (, integer }
+FIRST(term'') = FIRST(op2)
+              = { *, / }
+FIRST(op1)    = { + | - }
+FIRST(op2)    = { * | / }
+FIRST(num)    = { integer }
+
+FOLLOW(expr)   = { ) }
+FOLLOW(expr')  = FIRST(expr)
+               = { ) }
+FOLLOW(term)   = FIRST(expr') UNION FOLLOW(expr')
+               = { +, -, ) }
+FOLLOW(term')  = FIRST(term'') UNION FOLLOW(term'') UNION FOLLOW(term)
+               = { *, /, +, -, ) }
+FOLLOW(term'') = FOLLOW(term) 
+               = { +, -, ) }
+FOLLOW(op1)    = FIRST(term)
+               = { (, integer }
+FOLLOW(op2)    = FIRST(term')
+               = { (, integer }
+FOLLOW(num)    = FOLLOW(term')
+               = { *, /, +, -, ) }
+
+From FIRST() and FOLLOW() sets above, grammar is LL(1).
